@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+var myGamePiece;
+var plateformes;
+var canvX = 0;
+
+function randX() {return Math.floor(Math.random() * 3000);}
+function randY() {return 450+Math.floor(Math.random() * 120);}
+
+function startGame() {
+    myGamePiece = new component(0, 20, 40, "red", 10, 530);
+    plateformes = [
+      new component(1, 800, 30, "brown", 0, 570),
+    ];
+    var x = plateformes[0].x;
+    var i = 1;
+    while(x < 5000){
+      let vertDist = Math.floor(Math.random() * 200)-100;
+      let horizDist = Math.floor(Math.random() * 150);
+      if(plateformes[i-1].y > 500) vertDist = -Math.abs(vertDist);
+      let pX = plateformes[i-1].x + plateformes[i-1].width + horizDist;
+      let pY = plateformes[i-1].y + vertDist;
+      var p = new component(1, Math.floor(Math.random() * 120)+30, Math.floor(Math.random() * 30)+20, "black", pX, pY);
+      plateformes.push(p);
+      x += horizDist;
+      i++;
+    }
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 1500;
+        this.canvas.height = 600;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(updateGameArea, 20);
+        window.addEventListener('keydown', function (e) {
+          myGameArea.keys = (myGameArea.keys || []);
+          myGameArea.keys[e.keyCode] = true;
+        })
+        window.addEventListener('keyup', function (e) {
+          myGameArea.keys[e.keyCode] = false;
+        })
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function component(type, width, height, color, x, y) {
+    this.type = type;
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.x1 = x;
+    this.y = y;
+    this.y1 = y;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.jumping = false;
+    this.moving = false;
+    this.gravity = 0.05;
+    this.gravitySpeed = 0;
+    this.onPlatef;
+    this.lastPlat = 0;
+    this.scro = function(l){
+      this.x -= l;
+    }
+    this.update = function(){
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.newPos = function() {
+      if(this.type == 0){
+        this.scrolling = 1;
+        this.gravitySpeed = 4;
+        if(this.x >= 750) canvX += this.speedX;
+        this.x += this.speedX;
+        this.onPlateform();
+        if(!this.onPlatef)
+          {this.y = Math.min(myGameArea.canvas.height - this.height, this.y + this.speedY + this.gravitySpeed);}
+          if(this.speedX == 0) this.moving = false;
+          if(this.x >= 750) this.x = 750;
+          this.hitBottom();
+      }
+      if(this.type >= 1) this.x = this.x1 - canvX;
+    }
+
+    this.onPlateform = function() {
+      this.onPlatef = false;
+      for (i = 0; i < plateformes.length; i++){
+        var p = plateformes[i];
+        if(this.type == 0 && this.speedY >= 0 && this.x + this.width >= p.x &&
+           this.x < p.x + p.width &&
+           this.y + this.height <= p.y+7 &&
+           this.y + this.height > p.y ){
+             this.onPlatef = true;
+             this.jumping = false;
+             this.lastPlat = i;
+             if(i == plateformes.length-1) document.getElementById('GG').hidden = false;
+        }
+      }
+    }
+    this.hitBottom = function() {
+    if (this.y >= myGameArea.canvas.height- this.height) {
+      var p = plateformes[this.lastPlat];
+      this.y = p.y-50;
+      this.x = p.x+2;
+    }
+  }
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+    //horizontal movement
+    if (myGamePiece.moving && !(myGameArea.keys[37] || myGameArea.keys[39])) {
+      if(myGamePiece.speedX < 0) {myGamePiece.speedX += 0.5;}
+      else if(myGamePiece.speedX > 0) {myGamePiece.speedX -= 0.5;}
+    }
+    if (myGameArea.keys && myGameArea.keys[37]) {myGamePiece.speedX = Math.max(myGamePiece.speedX-0.5, -8); myGamePiece.moving = true;}
+    if (myGameArea.keys && myGameArea.keys[39]) {myGamePiece.speedX = Math.min(myGamePiece.speedX+0.5, 8); myGamePiece.moving = true;}
+
+    //vertical movement
+    if (myGamePiece.jumping) {myGamePiece.speedY = Math.min(myGamePiece.speedY+1.0, 0);}
+    if (myGameArea.keys && myGameArea.keys[38] && !myGamePiece.jumping) {myGamePiece.speedY = -20; myGamePiece.jumping = true;}
+
+    for (i = 0; i < plateformes.length; i++) {
+      var p = plateformes[i];
+      p.newPos();
+      p.update();
+    }
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+</script>
+<div id="debug"></div>
+<div id="GG" hidden>C O N G R A T U L A T I O N S ! ! ! ! ! </div>
+</body>
+</html>
