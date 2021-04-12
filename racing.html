@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+var myGamePiece;
+var cars;
+var canvY = 0;
+
+function randX() {return Math.floor(Math.random() * 600);}
+
+function startGame() {
+    myGamePiece = new component(0, 30, 40, "red", 285, 660);
+    cars = [
+      new component(1, 100, 40, "black", randX(), randX()),
+    ];
+    var y = cars[0].y;
+    var i = 1;
+    while(y > -30000){
+      let vertDist = Math.floor(Math.random() * 300)+50;
+      let pY = cars[i-1].y - vertDist;
+      var p = new component(1, Math.floor(Math.random() * 100)+50, Math.floor(Math.random() * 30)+20, "black", randX(), pY);
+      cars.push(p);
+      i++;
+      y -= vertDist;
+    }
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 600;
+        this.canvas.height = 700;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(updateGameArea, 16.69);
+        window.addEventListener('keydown', function (e) {
+          myGameArea.keys = (myGameArea.keys || []);
+          myGameArea.keys[e.keyCode] = true;
+        })
+        window.addEventListener('keyup', function (e) {
+          myGameArea.keys[e.keyCode] = false;
+        })
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function component(type, width, height, color, x, y) {
+    this.type = type;
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.y1 = y;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.crashCounter = 0;
+    this.update = function(){
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.newPos = function() {
+      if(this.type == 0){
+        this.y -= this.speedY;
+        this.x += this.speedX;
+        if(this.y <= 500) {
+          this.y = 500;
+          canvY -= this.speedY;
+        }
+        if(this.x < 0){
+          this.x = 0;
+          this.speedX = 0;
+        }
+        if(this.x > 570){
+          this.x = 570;
+          this.speedX = 0;
+        }
+        if(y < cars[cars.length-1].y) document.getElementById('GG').hidden = false;
+        this.crashed();
+      }
+      if(this.type >= 1){this.y = this.y1 - canvY;}
+    }
+    this.crashed = function() {
+      for (i = 0; i < cars.length; i++){
+        var c = cars[i];
+        if(this.x + this.width >= c.x &&
+           this.x < c.x + c.width &&
+           this.y <= c.y + c.height &&
+           this.y > c.y ){
+             this.speedY = 0;
+             this.crashCounter++;
+             c.x = -300;
+        }
+      }
+    }
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+    if(myGameArea.keys && myGameArea.keys[39]) {myGamePiece.speedX = Math.min(10, myGamePiece.speedX + 1);}
+    if(myGameArea.keys && !myGameArea.keys[39] && !myGameArea.keys[37]) {myGamePiece.speedX = Math.max(0, myGamePiece.speedX - 1);}
+
+    if(myGameArea.keys && myGameArea.keys[37]) {myGamePiece.speedX = Math.max(-10, myGamePiece.speedX - 1);}
+    if(myGameArea.keys && !myGameArea.keys[37] && !myGameArea.keys[39]) {myGamePiece.speedX = Math.min(0, myGamePiece.speedX + 1);}
+
+    if(myGameArea.keys && myGameArea.keys[38]) {myGamePiece.speedY = Math.min(12, myGamePiece.speedY + 0.5);}
+    if(myGameArea.keys && !myGameArea.keys[38]) {myGamePiece.speedY = Math.max(0, myGamePiece.speedY - 1);}
+
+    for (i = 0; i < cars.length; i++) {
+      var c = cars[i];
+      c.newPos();
+      c.update();
+    }
+
+    document.getElementById('crashes').innerHTML = "Number of crashes: "+myGamePiece.crashCounter;
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+</script>
+<div id="crashes"></div>
+<div id="GG" hidden>C O N G R A T U L A T I O N S ! ! ! ! ! </div>
+<div><a href="index.html">Platforming game</a></div>
+</body>
+</html>
