@@ -30,7 +30,6 @@ function startGame() {
       let vertDist = Math.floor(Math.random() * 200)-100;
       let horizDist = Math.floor(Math.random() * 150);
       if(plateformes[i-1].y > 500) vertDist = -Math.abs(vertDist);
-      if(plateformes[i-1].y < 150) vertDist = Math.abs(vertDist);
       let pX = plateformes[i-1].x + plateformes[i-1].width + horizDist;
       let pY = plateformes[i-1].y + vertDist;
       var p = new component(1, Math.floor(Math.random() * 120)+30, Math.floor(Math.random() * 30)+20, "black", pX, pY);
@@ -121,7 +120,7 @@ function component(type, width, height, color, x, y) {
     if (this.y >= myGameArea.canvas.height- this.height) {
       var p = plateformes[this.lastPlat];
       this.y = p.y-50;
-      this.x = p.x;
+      this.x = p.x+2;
     }
   }
 }
@@ -151,5 +150,6 @@ function updateGameArea() {
 </script>
 <div id="debug"></div>
 <div id="GG" hidden>C O N G R A T U L A T I O N S ! ! ! ! ! </div>
+<div><a href="racing.html">Racing game</a></div>
 </body>
 </html>
