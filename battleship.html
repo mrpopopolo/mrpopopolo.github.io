@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <div>
+    <canvas id="player" width="800px" height="800px"></canvas>
+    <canvas id="cpu" width="800px" height="800px"></canvas>
+  </div>
+  <div id="result"></div>
+  <div><a href="index.html">Platforming game</a></div>
+  <div><a href="racing.html">Racing game</a></div>
+  <script>
+    var canvas = [document.getElementById("player"),
+                  document.getElementById("cpu")];
+    var canv = [canvas[0].getContext("2d"),
+                canvas[1].getContext("2d")];
+    var colors = ["white", "pink", "orange", "purple", "green"];
+    boxSize = 80;
+    boxes = Math.floor(800 / boxSize);
+    canvas[1].addEventListener('click', handleClick);
+
+    var ships = [new Array(), new Array()]; //player then cpu
+    var player = 15, cpu = 15;
+
+    var targets = new Array(100);
+
+    function paint(can, x, y, len, dir, color){
+      let c = canv[can];
+      c.fillStyle = color;
+      let i = 0 + dir;
+      let j = 1 - dir;
+
+      for(let k = 0; k < len; k++){
+        c.fillRect(Math.floor(x + i*k) * boxSize,
+        Math.floor(y + j*k) * boxSize,
+        boxSize, boxSize);
+      }
+    }
+
+    function setupShips(player){
+      let s = ships[player];
+      let badSpot = true;
+
+      for(let j = 1; j < 6; j++){
+        let x, y, dir;
+        var shi;
+        while(badSpot){
+          badSpot = false;
+          x = Math.floor(10*Math.random());
+          y = Math.floor(10*Math.random());
+          dir = Math.floor(2*Math.random());
+          if(dir == 1 && x + j > 9) //horizontal too far
+            x -= (x + j) % 9;
+          if(dir == 0 && y + j > 9) y -= (y+j) % 9; //vertical
+
+
+          shi = new ship(player, j, x, y, dir);
+          shi.setup();
+          console.log(shi.size);
+          for(let k = 0; k < s.length; k++)
+            if(shi.collide(player, k))
+                badSpot = true;
+        }
+
+        s.push(shi);
+        if(player == 0) paint(player, x, y, j, dir, colors[j-1]);
+        badSpot = true;
+      }
+    }
+
+    function drawBox() {
+      for(let i = 0; i < 2; i++){
+        let c = canv[i];
+        c.beginPath();
+        c.lineWidth = 3;
+        c.strokeStyle = 'black';
+        if(i == 0)  c.fillStyle = "blue";
+        else {c.fillStyle = "red";}
+        for (var row = 0; row < boxes; row++) {
+          for (var column = 0; column < boxes; column++) {
+            var x = column * boxSize;
+            var y = row * boxSize;
+            c.rect(x, y, boxSize, boxSize);
+            c.fill();
+            c.stroke();
+          }
+        }
+        c.closePath();
+      }
+    }
+
+    function handleClick(e) {
+      let x = Math.floor(e.offsetX / boxSize);
+      let y = Math.floor(e.offsetY / boxSize);
+      let s = ships[1], pS = ships[0];
+
+      let whiff = true;
+      for(let i = 0; i < s.length; i++)
+          if(s[i].hit(x, y)) {
+            paint(1, x, y, 1, 0, "black");
+            cpu--;
+            whiff = false;
+          }
+      if(cpu == 0){
+        document.getElementById("result").innerHTML = "YOU WIN!!!!";
+      }
+
+      if(whiff) paint(1, x, y, 1, 0, "grey");
+      whiff = true;
+
+
+      let sameSpot = true;
+      while(sameSpot){
+        x = Math.floor(10*Math.random());
+        y = Math.floor(10*Math.random());
+        if(targets[x + 10 * y] != 1){
+          targets[x + 10 * y] = 1;
+          sameSpot = false;
+        }
+      }
+
+      for(let i = 0; i < pS.length; i++)
+          if(pS[i].hit(x, y)) {
+            paint(0, x, y, 1, 0, "black");
+            player--;
+            whiff = false;
+          }
+      if(whiff) paint(0, x, y, 1, 0, "grey");
+      if(player == 0){
+        document.getElementById("result").innerHTML = "YOU LOSE!!!!!!!!";
+      }
+    }
+
+    class ship {
+      constructor(owner, size, x, y, dir){
+        this.owner = owner;
+        this.size = size;
+        this.x = x;
+        this.y = y;
+        this.dir = dir;
+        this.body = new Array(size);
+        this.sunk = 0;
+      }
+
+      setup(){
+        let i = 0 + this.dir;
+        let j = 1 - this.dir;
+        for(let k = 0; k < this.size; k++)
+          this.body[k] = [this.x + (i*k), this.y +(j*k)];
+      }
+
+      hit(xx, yy){
+        let hit = false;
+        for(let i = 0; i < this.size; i++){
+          if(this.body[i][0] == xx && this.body[i][1] == yy){
+            hit = true;
+            this.body[i][0] = -1;
+            this.body[i][1] = -1;
+            this.sunk++;
+            if(this.sunk == this.size && this.owner == 1) document.getElementById("result").innerHTML = "Size "+this.size+" ship S U N K";
+          }
+        }
+        return hit;
+      }
+
+      collide(player, shipNum){
+        var s = ships[player][shipNum];
+        for(let i = 0; i < this.size; i++)
+          for(let j = 0; j < s.size; j++)
+            if(this.body[i][0] == s.body[j][0] && this.body[i][1] == s.body[j][1])
+            return true;
+        return false;
+      }
+
+    }
+
+    drawBox();
+    setupShips(0);
+    setupShips(1);
+  </script>
+</body>
+</html>
